@@ -288,8 +288,3 @@ La Q-table peut être visualisée sous forme de heatmap (inventaire × action) p
 - Spooner, T. et al. (2018). *Market Making via Reinforcement Learning*. AAMAS.
 - Watkins, C. & Dayan, P. (1992). *Q-learning*. Machine Learning.
 
----
-
-## Licence
-
-MIT License — libre d'utilisation à des fins pédagogiques et de recherche.
