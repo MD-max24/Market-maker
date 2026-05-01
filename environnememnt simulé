@@ -1,0 +1,53 @@
+import numpy as np
+
+class OrderBookEnv:
+    def __init__(self, dt=1.0, kappa=1.5, sigma=0.1,
+                 max_inventory=5, transaction_cost=0.001):
+        self.dt = dt
+        self.kappa = kappa
+        self.sigma = sigma
+        self.max_inventory = max_inventory
+        self.transaction_cost = transaction_cost
+        self.reset()
+
+    def reset(self):
+        self.mid_price = 100.0
+        self.inventory = 0
+        self.cash = 0.0
+        self.time = 0
+        return self._get_state()
+
+    def _get_state(self):
+        return self.inventory + self.max_inventory
+
+    def _arrival_intensity(self, delta):
+        A = 1.0
+        return A * np.exp(-self.kappa * delta)
+
+    def step(self, action):
+        delta_bid, delta_ask = action
+        bid = self.mid_price - delta_bid
+        ask = self.mid_price + delta_ask
+
+        lambda_bid = self._arrival_intensity(delta_bid)
+        lambda_ask = self._arrival_intensity(delta_ask)
+        exec_bid = np.random.poisson(lambda_bid * self.dt)
+        exec_ask = np.random.poisson(lambda_ask * self.dt)
+
+        dq = exec_bid - exec_ask
+        if abs(self.inventory + dq) > self.max_inventory:
+            dq = 0
+
+        self.cash += exec_ask * ask - exec_bid * bid
+        self.cash -= (exec_bid + exec_ask) * self.transaction_cost
+        self.inventory += dq
+
+        self.mid_price += self.sigma * np.random.randn() * np.sqrt(self.dt)
+
+        pnl = exec_ask * (ask - self.mid_price) + exec_bid * (self.mid_price - bid)
+        alpha = 0.01
+        reward = pnl - alpha * self.inventory**2
+
+        self.time += 1
+        done = (self.time >= 500)
+        return self._get_state(), reward, done
